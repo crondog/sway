@@ -1077,7 +1077,7 @@ void poll_for_update() {
 }
 
 int main(int argc, char **argv) {
-	init_log(L_DEBUG);
+	init_log(L_INFO);
 
 	char *socket_path = NULL;
 	char *bar_id = NULL;

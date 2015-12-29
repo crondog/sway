@@ -24,6 +24,7 @@ static swayc_t *new_swayc(enum swayc_types type) {
 	if (type != C_VIEW) {
 		c->children = create_list();
 	}
+    c->alpha = 0.0;
 	return c;
 }
 

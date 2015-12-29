@@ -553,6 +553,28 @@ static void handle_wlc_ready(void) {
 	}
 }
 
+static void handle_view_pre(wlc_handle view) {
+	swayc_t *c = swayc_by_handle(view);
+    if (!c) {
+        return;
+    }
+    if (c->alpha < 1.0) {
+        c->alpha += 0.01;
+        wlc_view_set_alpha(view, c->alpha);
+    }
+}
+
+static void handle_view_post(wlc_handle view) {
+    sway_log(L_DEBUG, "xxx view post");
+	/*swayc_t *c = swayc_by_handle(view);
+    if (c->alpha < 1.0) {
+        c->alpha += 0.01;
+        wlc_view_set_alpha(view, c->alpha);
+    }*/
+	
+//    wlc_view_set_alpha(view, c->alpha);
+}
+
 struct wlc_interface interface = {
 	.output = {
 		.created = handle_output_created,
@@ -570,7 +592,11 @@ struct wlc_interface interface = {
 		.request = {
 			.geometry = handle_view_geometry_request,
 			.state = handle_view_state_request
-		}
+		},
+        .render = {
+            .pre = handle_view_pre,
+            .post = handle_view_post
+        }
 	},
 	.keyboard = {
 		.key = handle_key

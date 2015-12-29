@@ -82,6 +82,8 @@ struct sway_container {
 	char *class;
 	char *app_id;
 
+    double alpha;
+
 	// Used by output containers to keep track of swaybar/swaybg child
 	// processes.
 	list_t *bar_pids;
