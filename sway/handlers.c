@@ -331,6 +331,39 @@ static void handle_view_state_request(wlc_handle view, enum wlc_view_state_bit s
 	return;
 }
 
+static bool issue_command(const struct wlc_modifiers *modifiers, const bool release) {
+	struct sway_mode *mode = config->current_mode;
+	int i;
+	for (i = 0; i < mode->bindings->length; ++i) {
+		struct sway_binding *binding = mode->bindings->items[i];
+
+		if ((modifiers->mods ^ binding->modifiers) == 0) {
+			bool match = false;
+			int j;
+			for (j = 0; j < binding->keys->length; ++j) {
+				xkb_keysym_t *key = binding->keys->items[j];
+				if ((match = check_key(*key, 0)) == false) {
+					break;
+				}
+			}
+			// This ensures that when we want a bindsym --release to happen, we 
+			// dont actually send key presses to a view which has focus
+			if (binding->is_release != release) {
+				return EVENT_HANDLED;
+			}
+			if (match) {
+				struct cmd_results *res = handle_command(binding->command);
+				if (res->status != CMD_SUCCESS) {
+					sway_log(L_ERROR, "Command '%s' failed: %s", res->input, res->error);
+				}
+				free_cmd_results(res);
+				return EVENT_HANDLED;
+			}
+		}
+	}
+
+	return EVENT_PASSTHROUGH;
+}
 
 static bool handle_key(wlc_handle view, uint32_t time, const struct wlc_modifiers *modifiers,
 		uint32_t key, enum wlc_key_state state) {
@@ -348,45 +381,20 @@ static bool handle_key(wlc_handle view, uint32_t time, const struct wlc_modifier
 		pointer_mode_reset();
 	}
 
-	struct sway_mode *mode = config->current_mode;
-
 	struct wlc_modifiers no_mods = { 0, 0 };
 	uint32_t sym = tolower(wlc_keyboard_get_keysym_for_key(key, &no_mods));
 
-	int i;
-
 	if (state == WLC_KEY_STATE_PRESSED) {
 		press_key(sym, key);
+		return issue_command(modifiers, false);
 	} else { // WLC_KEY_STATE_RELEASED
+		// Release the key after issuing the command because release_key clears
+		// the key state and the command will never execute
+		bool ret = issue_command(modifiers, true);
 		release_key(sym, key);
+		return ret;
 	}
 
-	for (i = 0; i < mode->bindings->length; ++i) {
-		struct sway_binding *binding = mode->bindings->items[i];
-
-		if ((modifiers->mods ^ binding->modifiers) == 0) {
-			bool match = false;
-			int j;
-			for (j = 0; j < binding->keys->length; ++j) {
-				xkb_keysym_t *key = binding->keys->items[j];
-				if ((match = check_key(*key, 0)) == false) {
-					break;
-				}
-			}
-			if (match) {
-				if (state == WLC_KEY_STATE_PRESSED) {
-					struct cmd_results *res = handle_command(binding->command);
-					if (res->status != CMD_SUCCESS) {
-						sway_log(L_ERROR, "Command '%s' failed: %s", res->input, res->error);
-					}
-					free_cmd_results(res);
-					return EVENT_HANDLED;
-				} else if (state == WLC_KEY_STATE_RELEASED) {
-					// TODO: --released
-				}
-			}
-		}
-	}
 	return EVENT_PASSTHROUGH;
 }
 

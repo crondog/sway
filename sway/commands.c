@@ -182,9 +182,17 @@ static struct cmd_results *cmd_bindsym(int argc, char **argv) {
 	struct sway_binding *binding = malloc(sizeof(struct sway_binding));
 	binding->keys = create_list();
 	binding->modifiers = 0;
+	if (strcmp((char*)*argv, "--release") == 0) {
+		binding->is_release = true;
+		argv++;
+		argc--;
+	}
+	else {
+		binding->is_release = false;
+	}
 	binding->command = join_args(argv + 1, argc - 1);
 
-	list_t *split = split_string(argv[0], "+");
+	list_t *split = split_string(*argv, "+");
 	for (int i = 0; i < split->length; ++i) {
 		// Check for a modifier key
 		int j;

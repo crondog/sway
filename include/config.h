@@ -24,6 +24,7 @@ struct sway_binding {
 	int order;
 	list_t *keys;
 	uint32_t modifiers;
+	bool is_release;
 	char *command;
 };
 
