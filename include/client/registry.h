@@ -64,6 +64,7 @@ struct registry {
         struct wl_shm *shm;
         struct desktop_shell *desktop_shell;
         struct lock *swaylock;
+        struct dpms *dpms;
         struct input *input;
         list_t *outputs;
 };

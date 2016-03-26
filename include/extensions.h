@@ -36,6 +36,11 @@ struct swaylock_state {
         wlc_resource surface;
 };
 
+struct dpms_state {
+		struct wlc_event_source *sleep;
+		uint32_t delay;
+};
+
 extern struct desktop_shell_state desktop_shell;
 
 void register_extensions(void);

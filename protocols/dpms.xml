@@ -1,0 +1,15 @@
+<protocol name="dpms">
+
+  <interface name="dpms" version="1">
+    <description summary="Dynamic Power Management System">
+	  Allow for the wayland compositor to sleep after a timeout
+    </description>
+
+    <request name="set_dpms_timeout">
+      <arg name="timeout" type="uint"/>
+    </request>
+
+    <request name="clear_dpms_timout"/>
+
+  </interface>
+</protocol>

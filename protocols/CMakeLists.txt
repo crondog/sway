@@ -21,6 +21,14 @@ WAYLAND_ADD_PROTOCOL_SERVER(proto-server-swaylock
 	swaylock.xml
 	swaylock
 )
+WAYLAND_ADD_PROTOCOL_CLIENT(proto-client-dpms
+	dpms.xml
+	dpms
+)
+WAYLAND_ADD_PROTOCOL_SERVER(proto-server-dpms
+	dpms.xml
+	dpms
+)
 
 add_library(sway-protocols
 	${proto-client-xdg-shell}
@@ -28,6 +36,8 @@ add_library(sway-protocols
 	${proto-server-desktop-shell}
 	${proto-client-swaylock}
 	${proto-server-swaylock}
+	${proto-client-dpms}
+	${proto-server-dpms}
 	)
 
 set(PROTOCOLS_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/protocols PARENT_SCOPE)

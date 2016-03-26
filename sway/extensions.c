@@ -4,12 +4,14 @@
 #include <wlc/wlc-render.h>
 #include "wayland-desktop-shell-server-protocol.h"
 #include "wayland-swaylock-server-protocol.h"
+#include "wayland-dpms-server-protocol.h"
 #include "layout.h"
 #include "log.h"
 #include "input_state.h"
 #include "extensions.h"
 
 struct desktop_shell_state desktop_shell;
+struct dpms_state dpms;
 
 static struct panel_config *find_or_create_panel_config(struct wl_resource *resource) {
 	for (int i = 0; i < desktop_shell.panels->length; i++) {
@@ -162,6 +164,29 @@ static void set_panel_position(struct wl_client *client, struct wl_resource *res
 	arrange_windows(&root_container, -1, -1);
 }
 
+static int dpms_timer_cb(void *arg) {
+	(void)arg;
+	sway_log(L_DEBUG, "dpms_timer_cb");
+
+	return 1;
+}
+
+static void set_dpms_timeout(struct wl_client *client, struct wl_resource *resource, uint32_t timeout) {
+	sway_log(L_DEBUG, "Setting dpms timeout to %d", timeout);
+
+	dpms.delay = timeout;
+	dpms.sleep = wlc_event_loop_add_timer(dpms_timer_cb, NULL);
+
+	wlc_event_source_timer_update(dpms.sleep, 1000 * dpms.delay);
+}
+
+static void clear_dpms_timout(struct wl_client *client, struct wl_resource *resource) {
+	sway_log(L_DEBUG, "Clearing dpms timeout");
+
+	if (dpms.sleep)
+      wlc_event_source_remove(dpms.sleep);
+}
+
 static struct desktop_shell_interface desktop_shell_implementation = {
 	.set_background = set_background,
 	.set_panel = set_panel,
@@ -175,6 +200,11 @@ static struct desktop_shell_interface desktop_shell_implementation = {
 static struct lock_interface swaylock_implementation = {
 	.set_lock_surface = set_lock_surface,
 	.unlock = unlock
+};
+
+static struct dpms_interface dpms_implementation = {
+	.set_dpms_timeout = set_dpms_timeout,
+	.clear_dpms_timout = clear_dpms_timout
 };
 
 static void desktop_shell_bind(struct wl_client *client, void *data,
@@ -207,6 +237,21 @@ static void swaylock_bind(struct wl_client *client, void *data,
 	wl_resource_set_implementation(resource, &swaylock_implementation, NULL, NULL);
 }
 
+static void dpms_bind(struct wl_client *client, void *data,
+		unsigned int version, unsigned int id) {
+	if (version > 1) {
+		// Unsupported version
+		return;
+	}
+
+	struct wl_resource *resource = wl_resource_create(client, &dpms_interface, version, id);
+	if (!resource) {
+		wl_client_post_no_memory(client);
+	}
+
+	wl_resource_set_implementation(resource, &dpms_implementation, NULL, NULL);
+}
+
 void register_extensions(void) {
 	wl_global_create(wlc_get_wl_display(), &desktop_shell_interface, 3, NULL, desktop_shell_bind);
 	desktop_shell.backgrounds = create_list();
@@ -214,4 +259,5 @@ void register_extensions(void) {
 	desktop_shell.lock_surfaces = create_list();
 	desktop_shell.is_locked = false;
 	wl_global_create(wlc_get_wl_display(), &lock_interface, 1, NULL, swaylock_bind);
+	wl_global_create(wlc_get_wl_display(), &dpms_interface, 1, NULL, dpms_bind);
 }

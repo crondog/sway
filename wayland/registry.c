@@ -7,6 +7,7 @@
 #include <sys/timerfd.h>
 #include "wayland-desktop-shell-client-protocol.h"
 #include "wayland-swaylock-client-protocol.h"
+#include "wayland-dpms-client-protocol.h"
 #include "client/registry.h"
 #include "stringop.h"
 #include "log.h"
@@ -201,6 +202,8 @@ static void registry_global(void *data, struct wl_registry *registry,
 		reg->desktop_shell = wl_registry_bind(registry, name, &desktop_shell_interface, version);
 	} else if (strcmp(interface, lock_interface.name) == 0) {
 		reg->swaylock = wl_registry_bind(registry, name, &lock_interface, version);
+	} else if (strcmp(interface, dpms_interface.name) == 0) {
+		reg->dpms = wl_registry_bind(registry, name, &dpms_interface, version);
 	}
 }
 
